@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 
 import { Contact } from '../contact.model';
 
@@ -8,14 +8,16 @@ import { Contact } from '../contact.model';
   styleUrls: ['./contact-detail.component.css'],
 })
 export class ContactDetailComponent implements OnInit {
-  contact: Contact = new Contact(
-    'abc1',
-    'Frank Gorshen',
-    'frank@gorshen.com',
-    '555-111-2313',
-    '../../assets/images/joseph-gonzalez-iFgRcqHznqg-unsplash.jpg',
-    null
-  );
+  @Input() contact!: Contact;
+
+  // contact: Contact = new Contact(
+  //   'abc1',
+  //   'Frank Gorshen',
+  //   'frank@gorshen.com',
+  //   '555-111-2313',
+  //   '../../assets/images/joseph-gonzalez-iFgRcqHznqg-unsplash.jpg',
+  //   null
+  // );
 
   constructor() {}
 
