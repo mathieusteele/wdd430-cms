@@ -10,7 +10,7 @@
       <cms-document-item
         *ngFor="let documentEl of documents"
         [document]="documentEl"
-        (selectedDocumentEvent)="onDocumentSelected(documentEl)"
+        (selectedDocumentEvent)="onSelectedDocument(documentEl)"
       ></cms-document-item>
     </div>
   </div>
