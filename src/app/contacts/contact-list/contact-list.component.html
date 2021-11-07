@@ -7,8 +7,12 @@
   </div>
   <div class="panel-body">
     <cms-contact-item
-      *ngFor="let contactEl of contacts"
-      [contact]="contactEl"
+      *ngFor="let contact of contacts"
+      [contact]="contact"
+      dnd-draggable
+      [dragEnabled]="true"
+      [dragData]="contact"
+      [dropZones]="['contactGroup']"
     ></cms-contact-item>
   </div>
 </div>

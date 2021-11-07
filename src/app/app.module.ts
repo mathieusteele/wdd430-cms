@@ -18,6 +18,8 @@ import { MessageEditComponent } from './messages/message-edit/message-edit.compo
 import { DropdownDirective } from './shared/dropdown.directive';
 import { DocumentEditComponent } from './documents/document-edit/document-edit.component';
 import { ContactEditComponent } from './contacts/contact-edit/contact-edit.component';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { DndModule } from 'ng2-dnd';
 
 @NgModule({
   declarations: [
@@ -38,7 +40,13 @@ import { ContactEditComponent } from './contacts/contact-edit/contact-edit.compo
     DocumentEditComponent,
     ContactEditComponent,
   ],
-  imports: [BrowserModule, AppRoutingModule],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    FormsModule,
+    ReactiveFormsModule,
+    DndModule.forRoot(),
+  ],
   providers: [],
   bootstrap: [AppComponent],
 })
