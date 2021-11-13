@@ -1,8 +1,7 @@
 import { EventEmitter, Injectable } from '@angular/core';
 import { Document } from './document.model';
-import { MOCKDOCUMENTS } from './MOCKDOCUMENTS';
 import { Subject } from 'rxjs';
-
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 @Injectable({
   providedIn: 'root',
 })
@@ -12,13 +11,33 @@ export class DocumentService {
   documentListChangedEvent = new Subject<Document[]>();
   maxDocumentId!: number;
 
-  constructor() {
-    this.documents = MOCKDOCUMENTS;
+  constructor(private http: HttpClient) {
     this.maxDocumentId = this.getMaxId();
   }
 
   getDocuments(): Document[] {
-    return this.documents.slice();
+    this.http
+      .get<Document[]>(
+        'https://ng-cms-e6f32-default-rtdb.firebaseio.com/documents.json'
+      )
+      .subscribe((documents: Document[]) => {
+        this.documents = documents;
+        this.maxDocumentId = this.getMaxId();
+        this.documents.sort((a, b) => {
+          if (a.name > b.name) {
+            return 1;
+          }
+          if (a.name < b.name) {
+            return -1;
+          }
+          return 0;
+        });
+        this.documentListChangedEvent.next(this.documents.slice());
+      }),
+      (error: any) => {
+        console.log(error);
+      };
+    return this.documents;
   }
 
   getDocument(id: string): Document | null {
@@ -45,7 +64,7 @@ export class DocumentService {
     this.maxDocumentId++;
     newDocument.id = this.maxDocumentId.toString();
     this.documents.push(newDocument);
-    this.documentListChangedEvent.next(this.documents.slice());
+    this.storeDocuments();
   }
 
   updateDocument(originalDocument: Document, newDocument: Document) {
@@ -61,7 +80,7 @@ export class DocumentService {
 
     newDocument.id = originalDocument.id;
     this.documents[position] = newDocument;
-    this.documentListChangedEvent.next(this.documents.slice());
+    this.storeDocuments();
   }
 
   deleteDocument(document: Document) {
@@ -74,6 +93,18 @@ export class DocumentService {
     }
 
     this.documents.splice(position, 1);
-    this.documentListChangedEvent.next(this.documents.slice());
+    this.storeDocuments();
+  }
+
+  storeDocuments() {
+    this.http
+      .put(
+        'https://ng-cms-e6f32-default-rtdb.firebaseio.com/documents.json',
+        this.documents
+      )
+      .subscribe((response) => {
+        console.log(response);
+        this.documentListChangedEvent.next(this.documents.slice());
+      });
   }
 }

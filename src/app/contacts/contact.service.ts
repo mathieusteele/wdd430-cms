@@ -1,7 +1,7 @@
 import { EventEmitter, Injectable } from '@angular/core';
 import { Contact } from './contact.model';
-import { MOCKCONTACTS } from './MOCKCONTACTS';
 import { Subject } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root',
@@ -12,13 +12,33 @@ export class ContactService {
   maxContactId!: number;
 
   private contacts: Contact[] = [];
-  constructor() {
-    this.contacts = MOCKCONTACTS;
+  constructor(private http: HttpClient) {
     this.maxContactId = this.getMaxId();
   }
 
   getContacts(): Contact[] {
-    return this.contacts.slice();
+    this.http
+      .get<Contact[]>(
+        'https://ng-cms-e6f32-default-rtdb.firebaseio.com/contacts.json'
+      )
+      .subscribe((contacts: Contact[]) => {
+        this.contacts = contacts;
+        this.maxContactId = this.getMaxId();
+        this.contacts.sort((a, b) => {
+          if (a.name > b.name) {
+            return 1;
+          }
+          if (a.name < b.name) {
+            return -1;
+          }
+          return 0;
+        });
+        this.contactListChangedEvent.next(this.contacts.slice());
+      }),
+      (error: any) => {
+        console.log(error);
+      };
+    return this.contacts;
   }
 
   getContact(id: string): Contact | null {
@@ -45,7 +65,7 @@ export class ContactService {
     this.maxContactId++;
     newContact.id = this.maxContactId.toString();
     this.contacts.push(newContact);
-    this.contactListChangedEvent.next(this.contacts.slice());
+    this.storeContacts();
   }
 
   updateContact(originalContact: Contact, newContact: Contact) {
@@ -61,7 +81,7 @@ export class ContactService {
 
     newContact.id = originalContact.id;
     this.contacts[position] = newContact;
-    this.contactListChangedEvent.next(this.contacts.slice());
+    this.storeContacts();
   }
 
   deleteContact(contact: Contact) {
@@ -73,6 +93,18 @@ export class ContactService {
       return;
     }
     this.contacts.splice(position, 1);
-    this.contactListChangedEvent.next(this.contacts.slice());
+    this.storeContacts();
+  }
+
+  storeContacts() {
+    this.http
+      .put(
+        'https://ng-cms-e6f32-default-rtdb.firebaseio.com/contacts.json',
+        this.contacts
+      )
+      .subscribe((response) => {
+        console.log(response);
+        this.contactListChangedEvent.next(this.contacts.slice());
+      });
   }
 }
