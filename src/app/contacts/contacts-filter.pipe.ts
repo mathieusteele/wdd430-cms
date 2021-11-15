@@ -6,7 +6,7 @@ import { Contact } from './contact.model';
 })
 export class ContactsFilterPipe implements PipeTransform {
   transform(contacts: Contact[], term: string): any {
-    console.log(term);
+    // console.log(term);
     let filteredContacts: Contact[] = [];
 
     if (term && term.length > 0) {

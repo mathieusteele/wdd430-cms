@@ -60,7 +60,7 @@ export class MessageService {
         this.messages
       )
       .subscribe((response) => {
-        console.log(response);
+        // console.log(response);
         this.messageChangedEvent.next(this.messages.slice());
       });
   }

@@ -103,7 +103,7 @@ export class ContactService {
         this.contacts
       )
       .subscribe((response) => {
-        console.log(response);
+        // console.log(response);
         this.contactListChangedEvent.next(this.contacts.slice());
       });
   }

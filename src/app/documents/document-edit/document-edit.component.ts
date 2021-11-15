@@ -38,7 +38,7 @@ export class DocumentEditComponent implements OnInit, OnDestroy {
       }
       this.editMode = true;
       this.document = JSON.parse(JSON.stringify(this.originalDocument));
-      console.log(this.document);
+      // console.log(this.document);
 
       // this.documentForm?.setValue({
       //   name: this.document.name,
