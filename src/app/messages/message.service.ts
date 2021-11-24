@@ -1,7 +1,6 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, EventEmitter } from '@angular/core';
 import { Message } from './message.model';
-import { MOCKMESSAGES } from './MOCKMESSAGES';
 
 @Injectable({
   providedIn: 'root',
@@ -9,20 +8,16 @@ import { MOCKMESSAGES } from './MOCKMESSAGES';
 export class MessageService {
   messageChangedEvent = new EventEmitter<Message[]>();
   private messages: Message[] = [];
-  maxMessageId!: number;
 
-  constructor(private http: HttpClient) {
-    this.maxMessageId = this.getMaxId();
-  }
+  constructor(private http: HttpClient) {}
 
   getMessages(): Message[] {
     this.http
-      .get<Message[]>(
-        'https://ng-cms-e6f32-default-rtdb.firebaseio.com/messages.json'
+      .get<{ message: string; messages: Message[] }>(
+        'http://localhost:3000/messages'
       )
-      .subscribe((messages: Message[]) => {
-        this.messages = messages;
-        this.maxMessageId = this.getMaxId();
+      .subscribe((responseData) => {
+        this.messages = responseData.messages;
         // I would sort the messages here chronologically but there is no timestamp on the model.
         this.messageChangedEvent.next(this.messages.slice());
       }),
@@ -48,19 +43,23 @@ export class MessageService {
     return maxId;
   }
 
-  addMessage(message: Message) {
-    this.messages.push(message);
-    this.storeMessages();
-  }
+  addMessage(newMessage: Message) {
+    if (!newMessage) {
+      return;
+    }
 
-  storeMessages() {
+    newMessage.id = '';
+
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+
     this.http
-      .put(
-        'https://ng-cms-e6f32-default-rtdb.firebaseio.com/messages.json',
-        this.messages
+      .post<{ msg: string; message: Message }>(
+        'http://localhost:3000/messages',
+        newMessage,
+        { headers: headers }
       )
-      .subscribe((response) => {
-        // console.log(response);
+      .subscribe((responseData) => {
+        this.messages.push(responseData.message);
         this.messageChangedEvent.next(this.messages.slice());
       });
   }

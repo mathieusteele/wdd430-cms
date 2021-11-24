@@ -2,27 +2,39 @@ import { EventEmitter, Injectable } from '@angular/core';
 import { Document } from './document.model';
 import { Subject } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+// import { map } from 'rxjs/operators';
 @Injectable({
   providedIn: 'root',
 })
 export class DocumentService {
-  private documents: Document[] = [];
   documentSelectedEvent = new EventEmitter<Document>();
   documentListChangedEvent = new Subject<Document[]>();
-  maxDocumentId!: number;
 
-  constructor(private http: HttpClient) {
-    this.maxDocumentId = this.getMaxId();
-  }
+  private documents: Document[] = [];
+
+  constructor(private http: HttpClient) {}
 
   getDocuments(): Document[] {
     this.http
-      .get<Document[]>(
-        'https://ng-cms-e6f32-default-rtdb.firebaseio.com/documents.json'
+      .get<{ message: string; documents: Document[] }>(
+        'http://localhost:3000/documents'
       )
-      .subscribe((documents: Document[]) => {
-        this.documents = documents;
-        this.maxDocumentId = this.getMaxId();
+      .subscribe((responseData) => {
+        this.documents = responseData.documents;
+        // .pipe(
+        //   map((documentData) => {
+        //     return documentData.documents.map((document) => {
+        //       return {
+        //         id: document._id,
+        //         name: document.name,
+        //         description: document.description,
+        //         url: document.url,
+        //       };
+        //     });
+        //   })
+        // )
+        // .subscribe((transformedDocuments) => {
+        //   this.documents = transformedDocuments;
         this.documents.sort((a, b) => {
           if (a.name > b.name) {
             return 1;
@@ -45,26 +57,25 @@ export class DocumentService {
     return matches.length ? matches[0] : null;
   }
 
-  getMaxId(): number {
-    let maxId = 0;
-
-    this.documents.map((document) => {
-      if (+document.id > maxId) {
-        maxId = +document.id;
-      }
-    });
-    return maxId;
-  }
-
   addDocument(newDocument: Document) {
     if (!newDocument) {
       return;
     }
 
-    this.maxDocumentId++;
-    newDocument.id = this.maxDocumentId.toString();
-    this.documents.push(newDocument);
-    this.storeDocuments();
+    newDocument.id = '';
+
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+
+    this.http
+      .post<{ message: string; document: Document }>(
+        'http://localhost:3000/documents',
+        newDocument,
+        { headers: headers }
+      )
+      .subscribe((responseData) => {
+        this.documents.push(responseData.document);
+        this.documentListChangedEvent.next(this.documents.slice());
+      });
   }
 
   updateDocument(originalDocument: Document, newDocument: Document) {
@@ -72,38 +83,49 @@ export class DocumentService {
       return;
     }
 
-    let position = this.documents.indexOf(originalDocument);
+    let position = this.documents.findIndex(
+      (d) => d.id === originalDocument.id
+    );
 
     if (position < 0) {
       return;
     }
 
     newDocument.id = originalDocument.id;
-    this.documents[position] = newDocument;
-    this.storeDocuments();
+    // newDocument._id = originalDocument._id;
+
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+
+    this.http
+      .put(
+        'http://localhost:3000/documents/' + originalDocument.id,
+        newDocument,
+        { headers: headers }
+      )
+      .subscribe(() => {
+        this.documents[position] = newDocument;
+        this.documentListChangedEvent.next(this.documents.slice());
+      });
   }
 
   deleteDocument(document: Document) {
     if (!document) {
       return;
     }
-    const position = this.documents.indexOf(document);
+
+    const position = this.documents.findIndex((d) => d.id === document.id);
+
     if (position < 0) {
       return;
     }
 
-    this.documents.splice(position, 1);
-    this.storeDocuments();
-  }
-
-  storeDocuments() {
     this.http
-      .put(
-        'https://ng-cms-e6f32-default-rtdb.firebaseio.com/documents.json',
-        this.documents
-      )
-      .subscribe((response) => {
-        console.log(response);
+      .delete('http://localhost:3000/documents/' + document.id)
+      .subscribe(() => {
+        const updatedDocuments = this.documents.filter((filteredDocument) => {
+          return filteredDocument.id !== document.id;
+        });
+        this.documents = updatedDocuments;
         this.documentListChangedEvent.next(this.documents.slice());
       });
   }
